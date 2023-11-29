@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::str::FromStr;
+// use rayon::prelude::*;
 
 #[derive(Debug, PartialEq)]
 struct IP {
@@ -31,12 +32,14 @@ impl FromStr for IP {
 
 fn main() {
     if let Ok(lines) = read_lines("./input.txt") {
-        for line in lines {
-            if let Ok(ip) = line {
-                let ip:IP = ip.parse().unwrap();
-                println!("{:?}", ip);
-            }
-        }
+        let data: Vec<IP>= lines
+            .into_iter()
+            .filter_map(|item| item.ok())
+            .map(|i| i.parse().ok())
+            .filter_map(|parsed_ip| Some(parsed_ip))
+            .map(|i| i.unwrap())
+            .collect();
+        println!("{:?}", data);
     }
     else {
         println!("File not found")
