@@ -65,7 +65,7 @@ fn p1(){
             .filter_map(|parsed_ip| Some(parsed_ip))
             .map(|i| i.unwrap())
             .collect();
-        println!("{:?}", data);
+        // println!("{:?}", data);
         let ans: u32 = data
             .into_iter()
             .filter(|game| 
@@ -91,7 +91,7 @@ fn p2(){
             .filter_map(|parsed_ip| Some(parsed_ip))
             .map(|i| i.unwrap())
             .collect();
-        println!("{:?}", data);
+        // println!("{:?}", data);
         let ans: u32 = data
             .into_iter()
             .map(|game| game.red * game.green * game.blue)
