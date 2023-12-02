@@ -29,8 +29,7 @@ impl FromStr for IP {
         })
     }
 }
-
-fn main() {
+fn p1 (){
     if let Ok(lines) = read_lines("./input.txt") {
         let data: Vec<IP>= lines
             .into_iter()
@@ -44,6 +43,13 @@ fn main() {
     else {
         println!("File not found")
     }
+}
+
+fn p2(){}
+
+fn main() {
+    p1();
+    p2();
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
