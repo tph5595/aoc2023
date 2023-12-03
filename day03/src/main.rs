@@ -158,18 +158,18 @@ fn p1 (){
 }
 
 fn find_ratios(numbers: &Vec<Number>, gears: HashSet<(usize, usize)>)-> usize{
+    let new_nums: Vec<(usize, HashSet<(usize, usize)>)>= numbers.iter().map(|i| (i.value, gen_set(i))).collect();
     let mut total = 0;
     for gear in gears{
         let mut first = None;
-        for number in numbers{
-            let n_set = gen_set(&number);
+        for (num, n_set)in &new_nums{
             let f = n_set.contains(&gear);
             if f{
                 if first != None{
-                    total += number.value*first.unwrap();
+                    total += num*first.unwrap();
                 }
                 else {
-                    first = Some(number.value);
+                    first = Some(num);
                 }
             }
         }
