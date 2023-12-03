@@ -48,6 +48,12 @@ fn parse(lines: Vec<String>) -> (Vec<Number>, HashSet<(usize,usize)>){
                 },
             };
         }
+        if start != None{
+            n.push(Number { value: current as usize, 
+                start: start.unwrap(), 
+                end: (l.len(), row)
+            })
+        }
     }
     (n,s)
 }
@@ -84,8 +90,9 @@ fn p1 (){
         let good_numbers = find_good(numbers, symbols);
 
         let s: usize = good_numbers.iter().map(|i| i.value).sum();
+        let nums: Vec<usize> = good_numbers.iter().map(|i| i.value).collect();
         
-        // println!("{:?}", good_numbers);
+        println!("{:?}", nums);
         println!("{:?}", s);
     }
     else {
