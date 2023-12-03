@@ -11,6 +11,63 @@ struct Number{
     end: (usize, usize),
 }
 
+fn parse2(lines: Vec<String>) -> (Vec<Number>, HashSet<(usize,usize)>){
+    let mut n = Vec::new();
+    let mut s = HashSet::new();
+    let mut current = 0;
+    let mut start = None;
+    for (row, l) in lines.iter().enumerate(){
+        for (col, c) in l.chars().enumerate(){
+            match c{
+                '0'..='9'=> {
+                    current = current*10 + c.to_digit(10).unwrap();
+                    if start == None{
+                        start = Some((col, row))
+                    }
+                },
+                '.' => {
+                    if start != None && col != 0{
+                        n.push(Number { value: current as usize, 
+                            start: start.unwrap(), 
+                            end: (col-1, row)
+                        })
+                    }
+                    current = 0;
+                    start = None;
+                },
+                '*' => {
+                    s.insert((col,row));
+                    if start != None && col != 0{
+                        n.push(Number { value: current as usize, 
+                            start: start.unwrap(), 
+                            end: (col-1, row)
+                        })
+                    }
+                    current = 0;
+                    start = None;
+                },
+                _ => {
+                    if start != None && col != 0{
+                        n.push(Number { value: current as usize, 
+                            start: start.unwrap(), 
+                            end: (col-1, row)
+                        })
+                    }
+                    current = 0;
+                    start = None;
+                },
+            };
+        }
+        if start != None{
+            n.push(Number { value: current as usize, 
+                start: start.unwrap(), 
+                end: (l.len(), row)
+            })
+        }
+    }
+    (n,s)
+}
+
 fn parse(lines: Vec<String>) -> (Vec<Number>, HashSet<(usize,usize)>){
     let mut n = Vec::new();
     let mut s = HashSet::new();
@@ -100,9 +157,46 @@ fn p1 (){
     }
 }
 
+fn find_ratios(numbers: &Vec<Number>, gears: HashSet<(usize, usize)>)-> usize{
+    let mut total = 0;
+    for gear in gears{
+        let mut first = None;
+        for number in numbers{
+            let n_set = gen_set(&number);
+            let f = n_set.contains(&gear);
+            if f{
+                if first != None{
+                    total += number.value*first.unwrap();
+                }
+                else {
+                    first = Some(number.value);
+                }
+            }
+        }
+    }
+    total
+}
+
+fn p2(){
+    if let Ok(lines) = read_lines("./input.txt") {
+        let raw_data: Vec<String>= lines
+            .into_iter()
+            .filter_map(|item| item.ok())
+            .collect();
+        let (numbers, gears) = parse(raw_data);
+        
+        let ratios = find_ratios(&numbers, gears);
+        println!("{:?}", ratios);
+    }
+    else {
+        println!("File not found")
+    }
+
+}
 
 fn main() {
-    p1();
+    // p1();
+    p2();
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
