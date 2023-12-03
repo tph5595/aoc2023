@@ -1,23 +1,7 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::str::FromStr;
 use std::usize;
-
-#[derive(Debug, PartialEq)]
-struct Data<'a>{
-    values: &'a mut Vec<Number>,
-}
-
-impl Data<'_>{
-    fn setrow(mut self, row: usize) -> Self{
-        for n in self.values{
-            n.start.1 = row;
-            n.end.1 = row;
-        }
-        self
-    }
-}
 
 #[derive(Debug, PartialEq)]
 struct Number{
@@ -31,48 +15,60 @@ struct Symbol {
     loc: (usize, usize),
 }
 
+#[derive(Debug, PartialEq)]
+enum Data {
+    N(Number),
+    S(Symbol)
+    
+}
 
-impl<'a> FromStr for Data<'a>{
-
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<Data<'a>, Self::Err> {
-        let mut values = Vec::new();
-        let mut current = 0;
-        let mut start = 99999;
-        for (i, c) in input.chars().enumerate(){
+fn parse(lines: Vec<String>) -> Vec<Data>{
+    let mut values = Vec::new();
+    let mut current = 0;
+    let mut start = None;
+    for (row, l) in lines.iter().enumerate(){
+        for (col, c) in l.chars().enumerate(){
             match c{
                 '0'..='9'=> {
                     current = current*10 + c.to_digit(10).unwrap();
-                    if start == 99999{
-                        start = i
+                    if start == None{
+                        start = Some((col, row))
                     }
                 },
                 '.' => {
-                    if start != 99999{
-                        values.push(Number { value: current as usize, start: (start,0), end: (i-1,0) })
-
+                    if start != None && col != 0{
+                        values.push(Data::N(Number { value: current as usize, 
+                            start: start.unwrap(), 
+                            end: (col-1, row)
+                        }))
                     }
                     current = 0;
-                    start = 99999;
+                    start = None;
                 },
-                _ => {},
+                _ => {
+                    values.push(Data::S(Symbol { loc: (col,row) }));
+                    if start != None && col != 0{
+                        values.push(Data::N(Number { value: current as usize, 
+                            start: start.unwrap(), 
+                            end: (col-1, row)
+                        }))
+                    }
+                    current = 0;
+                    start = None;
+                },
             };
         }
-
-        Ok(Data { values })
     }
+    values
 }
 
 fn p1 (){
-    if let Ok(lines) = read_lines("./input.txt") {
-        let data: Vec<Number>= lines
+    if let Ok(lines) = read_lines("./test.txt") {
+        let raw_data: Vec<String>= lines
             .into_iter()
             .filter_map(|item| item.ok())
-            .enumerate()
-            .map(|(i, line)| line.parse::<Data>().unwrap().setrow(i))
-            // .flat_map(|i| i.values)
             .collect();
+        let data = parse(raw_data);
         println!("{:?}", data);
     }
     else {
@@ -80,11 +76,9 @@ fn p1 (){
     }
 }
 
-// fn p2(){}
 
 fn main() {
     p1();
-    // p2();
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
