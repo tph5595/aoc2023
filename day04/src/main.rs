@@ -1,6 +1,7 @@
 use std::collections::{HashSet, HashMap};
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::ops::AddAssign;
 use std::path::Path;
 use std::str::FromStr;
 use std::usize;
@@ -92,7 +93,7 @@ fn calculate_copies(cards: Vec<Card>)-> usize{
             total += my_copies;
             let p = calculate_new_copy(&card);
             for i in (card.number+1)..=(card.number+p){
-                copies.entry(i).and_modify(|copy| *copy += my_copies).or_insert(my_copies + 1);
+                copies.entry(i).or_insert(1).add_assign(my_copies);
             }
     }
     total
