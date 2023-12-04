@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -7,6 +7,7 @@ use std::usize;
 
 #[derive(Debug, PartialEq)]
 struct Card{
+    number: usize,
     winning_numbers: HashSet<usize>,
     found_numbers: Vec<usize>,
 }
@@ -17,7 +18,13 @@ impl FromStr for Card {
 
     fn from_str(input: &str) -> Result<Card, Self::Err> {
 
-        let mut card = input.split(":").skip(1).next().unwrap().trim().split("|");
+        let mut card_meta= input.split(":");
+        let number = card_meta.next().unwrap()
+            .split_whitespace()
+            .skip(1)
+            .next().unwrap()
+            .parse().unwrap();
+        let mut card = card_meta.next().unwrap().trim().split("|");
         let winning = card.next().unwrap()
             .trim()
             .split_whitespace()
@@ -28,13 +35,13 @@ impl FromStr for Card {
             .map(|i|i.parse().unwrap())
             .collect();
 
-        Ok(Card {winning_numbers: HashSet::from_iter(winning), found_numbers})
+        Ok(Card {number, winning_numbers: HashSet::from_iter(winning), found_numbers})
     }
 }
 
-fn calculate_points(c: Card) -> usize{
+fn calculate_points(c: &Card) -> usize{
     let mut total = 0;
-    for n in c.found_numbers{
+    for n in &c.found_numbers{
         if c.winning_numbers.contains(&n){
             total += 1;
         }
@@ -58,7 +65,7 @@ fn p1 (){
             .map(|i| i.unwrap())
             .collect();
         let ans: usize= data.into_iter()
-            .map(|i| calculate_points(i))
+            .map(|i| calculate_points(&i))
             .sum();
         println!("{:?}", ans);
     }
@@ -67,10 +74,51 @@ fn p1 (){
     }
 }
 
-fn p2(){}
+fn calculate_new_copy(c: &Card) -> usize{
+    let mut total = 0;
+    for n in &c.found_numbers{
+        if c.winning_numbers.contains(&n){
+            total += 1;
+        }
+    }
+    total
+}
+
+fn calculate_copies(cards: Vec<Card>)-> usize{
+    let mut total = 0;
+    let mut copies: HashMap<usize, usize>= HashMap::new();
+    for card in cards {
+            let my_copies = copies.remove(&card.number).unwrap_or(1);
+            total += my_copies;
+            let p = calculate_new_copy(&card);
+            for i in (card.number+1)..=(card.number+p){
+                copies.entry(i).and_modify(|copy| *copy += my_copies).or_insert(my_copies + 1);
+            }
+    }
+    total
+}
+
+fn p2(){
+    if let Ok(lines) = read_lines("./input.txt") {
+        let cards: Vec<Card>= lines
+            .into_iter()
+            .filter_map(|item| item.ok())
+            .map(|i| i.parse().ok())
+            .filter_map(|parsed_ip| Some(parsed_ip))
+            .map(|i| i.unwrap())
+            .collect();
+        let ans = calculate_copies(cards);
+        println!("{:?}", ans);
+    }
+    else {
+        println!("File not found")
+    }
+}
 
 fn main() {
-    p1();
+    if false{
+        p1();
+    }
     p2();
 }
 
