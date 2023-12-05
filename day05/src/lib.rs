@@ -91,22 +91,34 @@ pub fn p1 (file: &str) -> i128{
     }
 }
 
-fn map_seed_range(range_start:i128, range_len: i128, maps: &Vec<GardenMap>) -> i128 {
-    let mut current = vec![(range_start, range_len)];
-    // let mut count = 0;
+fn compress_range(mut ranges: Vec<(i128, i128)>) -> Vec<(i128, i128)>{
+    ranges.sort();
+    let mut last: (i128, i128) = *(ranges.get(0).unwrap());
+    let mut new_ranges = Vec::new();
+    for range in &ranges{
+        if last.0 + last.1 == range.0{
+            last.1 += range.1;
+        }
+        else {
+            new_ranges.push(last);
+            last = *range;
+        }
+    }
+    new_ranges.push(last);
+    new_ranges
+}
+
+fn map_seed_range(mut current: Vec<(i128, i128)>, maps: &Vec<GardenMap>) -> i128 {
     for map in maps{
         current = current.into_iter().flat_map(|i| one_step_range(i, map)).collect();
-        // // println!("current: {:?}", current);
-        // if count > 3{
-        //     // unimplemented!();
-        // }
-        // count += 1;
+        if current.len() > 20{
+        current = compress_range(current);
+        }
     }
     current.into_iter().map(|i| i.0).min().unwrap()
 }
 
 fn adjust_range(r1: (i128, i128), r2: (i128, i128)) -> (Vec<(i128, i128)>, Vec<(i128, i128)>) {
-    // println!("{:?}\t{:?}", r1, r2);
     if r1.1 < r2.0 || r2.1 < r1.0{
         return (vec![r1], Vec::new());
     }
@@ -143,14 +155,11 @@ fn one_step_range(current: (i128, i128), map: &GardenMap) -> Vec<(i128, i128)>{
 }
 
 fn flip_em(seeds: Vec<i128>, maps: Vec<GardenMap>) -> i128{
-    let mut lowest = i128::MAX;
-
-    for chunk in &seeds.into_iter().chunks(2) {
-        let seed_range: Vec<i128>= chunk.collect();
-        let n = map_seed_range(*seed_range.get(0).unwrap(), *seed_range.get(1).unwrap(), &maps);
-        lowest = lowest.min(n);
-    }
-    lowest
+    let seed_vec: Vec<(i128, i128)>= seeds.into_iter()
+        .chunks(2).into_iter()
+        .map( |c| c.collect_tuple().unwrap())
+        .collect();
+    map_seed_range(seed_vec, &maps)
 }
 
 pub fn p2(file: &str) -> i128{
