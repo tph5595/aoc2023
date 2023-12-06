@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::u32;
+use std::{u32, usize};
 
 #[derive(Debug, PartialEq)]
 pub struct Record{
@@ -9,19 +9,13 @@ pub struct Record{
     distance: u32,
 }
 
-fn number_ways(record: &Record)-> u32{
-    // let min = 0;
-    // let max_1 = record.time/02.0;
-    // let max_2 = ;
-    // let max = max_1.
-    // // min -> dist = (time-hold)*hold
-    // // min -> dist = (time*hold-hold^2
-    // // min -> dist = (time-hold)*hold
-    // // max -> 0 = (time-hold)
-    // min - max
+fn number_ways(record: &Record)-> usize{
+    (1..record.time).filter(|hold| (record.time-hold)*hold > record.distance)
+        .collect::<Vec<u32>>()
+        .len()
 }
 
-pub fn p1 (file: &str) -> u32{
+pub fn p1 (file: &str) -> usize{
     if let Ok(lines) = read_lines(file) {
         let data: Vec<Vec<u32>>= lines
             .into_iter()
