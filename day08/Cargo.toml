@@ -8,6 +8,7 @@ edition = "2021"
 lto = true
 
 [dependencies]
+num = "0.4.1"
 
 [dev-dependencies]
 criterion = "0.3"
