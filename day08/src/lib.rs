@@ -1,44 +1,47 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::str::FromStr;
 
-#[derive(Debug, PartialEq)]
-pub struct IP {
-    first: u8,
-    second: u8,
-    third: u8,
-    fourth: u8,
-}
-
-impl FromStr for IP {
-
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<IP, Self::Err> {
-        let sep = ".";
-
-        let mut data = input.split(sep);
-
-        Ok(IP{
-            first: data.next().unwrap_or_default().parse().unwrap(),
-            second: data.next().unwrap_or_default().parse().unwrap(),
-            third: data.next().unwrap_or_default().parse().unwrap(),
-            fourth: data.next().unwrap_or_default().parse().unwrap(),
-        })
-    }
-}
-
-pub fn p1 (file: &str) -> Vec<IP>{
+pub fn p1 (file: &str) -> u32{
     if let Ok(lines) = read_lines(file) {
-        let data: Vec<IP>= lines
+        let data: Vec<String>= lines
             .into_iter()
             .filter_map(|item| item.ok())
-            .map(|i| i.parse().ok())
-            .filter_map(|parsed_ip| Some(parsed_ip))
-            .map(|i| i.unwrap())
+            .map(|i| i.parse().unwrap())
             .collect();
-        return data;
+        let mut iter = data.into_iter();
+        let dir = iter.next().unwrap();
+        let trans: Vec<Vec<String>>= iter.skip(1)
+            .map(|i| 
+                 i.replace(|c: char| !(c.is_uppercase() || c.is_whitespace()), "")
+                 .split_whitespace()
+                 .map(|i| i.to_owned())
+                 .collect::<Vec<String>>())
+            .collect();
+        let map: HashMap<String, (String, String)>= trans.into_iter().fold(HashMap::new(), |mut m, v| {
+                                         m.insert(v.get(0).unwrap().to_owned(), 
+                                                  (v.get(1).unwrap().to_owned(), 
+                                                   v.get(2).unwrap().to_owned()));
+                                         m
+        });
+        let mut state = "AAA";
+        let mut count = 0;
+        for d in dir.chars().into_iter().cycle(){
+            if state == "ZZZ"{
+                break;
+            }
+            if d == 'L' 
+            {
+                state = &map.get(state).unwrap().0 ;
+                count  = count + 1;
+            }
+            else {
+                state = &map.get(state).unwrap().1 ;
+                count = count + 1;
+            }
+        }
+        return count;
     }
     else {
         panic!("File not found")
