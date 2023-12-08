@@ -69,15 +69,18 @@ pub fn p2(file: &str) -> u128{
             .filter(|i| i.get(0).unwrap().chars().last().unwrap() == 'A')
             .map(|i| i.get(0).unwrap().to_owned())
             .collect();
-        let map: HashMap<String, (String, String)>= trans.into_iter().fold(HashMap::new(), |mut m, v| {
-                                         m.insert(v.get(0).unwrap().to_owned(), 
-                                                  (v.get(1).unwrap().to_owned(), 
-                                                   v.get(2).unwrap().to_owned()));
-                                         m
-        });
+         let map: HashMap<String, (String, String)> = trans.into_iter()
+             .map(|i| (i[0].to_owned(), (i[1].to_owned(), i[2].to_owned())))
+             .collect();
+        // let map: HashMap<String, (String, String)>= trans.into_iter().fold(HashMap::new(), |mut m, v| {
+        //                                  m.insert(v.get(0).unwrap().to_owned(), 
+        //                                           (v.get(1).unwrap().to_owned(), 
+        //                                            v.get(2).unwrap().to_owned()));
+        //                                  m
+        // });
         let mut ans: Vec<u128> = Vec::new();
         for i in starts {
-            let mut state: String = i;
+            let mut state: & String = &i;
             let mut count = 0;
             for d in dir.chars().into_iter().cycle(){
                 if state.chars().last().unwrap() == 'Z'{
@@ -85,13 +88,11 @@ pub fn p2(file: &str) -> u128{
                 }
                 if d == 'L' 
                 {
-                    let tmp = &map.get(&state).unwrap().0 ;
-                    state = tmp.to_string();
+                    state = &map.get(state).unwrap().0 ;
                     count  = count + 1;
                 }
                 else {
-                    let tmp = &map.get(&state).unwrap().1 ;
-                    state = tmp.to_string();
+                    state = &map.get(state).unwrap().1 ;
                     count = count + 1;
                 }
             }
