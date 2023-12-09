@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use day00::{p1, p2};
+use day09::{p1, p2};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("p1", |b| b.iter(|| p1("./src/input.txt")));
