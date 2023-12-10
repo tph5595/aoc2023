@@ -252,7 +252,7 @@ fn mark_map(mut map: Vec<Vec<char>>, start:(usize,usize)) -> Vec<Vec<char>>{
     map
 }
 
-fn calc_inside(mut map: Vec<Vec<char>>) -> (u128, Vec<Vec<char>>){
+fn calc_inside(mut map: Vec<Vec<char>>) -> u128 {
     let mut inside = 0;
     for (i, row) in map.clone().iter().enumerate(){
         for (j, c) in row.iter().enumerate(){
@@ -261,16 +261,47 @@ fn calc_inside(mut map: Vec<Vec<char>>) -> (u128, Vec<Vec<char>>){
             }
             if *c == '.' && i > 0 && j > 0 && i < map.len()-1 && j < map[i].len()-1{
                 if map[i-1][j] == 'G' ||
-                   map[i+1][j] == 'G' ||
-                   map[i][j-1] == 'G' || 
-                   map[i][j+1] == 'G'{
+                   // map[i+1][j] == 'G' ||
+                   map[i][j-1] == 'G' //|| 
+                   // map[i][j+1] == 'G'
+                   {
                     inside += 1;
                     map[i][j] = 'G';
                 }
             }
         }
     }
-    (inside, map)
+    inside
+}
+
+pub fn p2_og_idea(file: &str) -> u128{
+    if let Ok(lines) = read_lines(file) {
+        let map: Vec<Vec<char>>= lines
+            .into_iter()
+            .filter_map(|item| item.ok())
+            .map(|s| s.chars().collect())
+            .collect();
+        let starts: Vec<(usize, usize)>= map.iter()
+            .enumerate()
+            .map(|(row, s)| 
+                    (row,
+                     s.iter()
+                    .enumerate()
+                    .filter(|(_, c)| **c == 'S')
+                    .collect::<Vec<(usize, &char)>>()))
+            .filter(|(_, v)| !v.is_empty())
+            .map(|(row, v)| (row, v.get(0).unwrap().0))
+            .collect();
+        let isolated = isolate_map(map, *starts.get(0).unwrap());
+        // println!("{:?}", isolated);
+        let marked_map = mark_map(isolated, *starts.get(0).unwrap());
+        // println!("{:?}", marked_map);
+        let ans = calc_inside(marked_map);
+        return ans;
+    }
+    else {
+        panic!("File not found")
+    }
 }
 
 pub fn p2(file: &str) -> u128{
@@ -292,22 +323,20 @@ pub fn p2(file: &str) -> u128{
             .map(|(row, v)| (row, v.get(0).unwrap().0))
             .collect();
         let isolated = isolate_map(map, *starts.get(0).unwrap());
-        // println!("{:?}", isolated);
-        let marked_map = mark_map(isolated, *starts.get(0).unwrap());
-        println!("{:?}", marked_map);
-        let (mut ans, mut new_map) = calc_inside(marked_map);
-        loop{
-            let updates = calc_inside(new_map);
-            if updates.0 == ans{
-                new_map = updates.1;
-                break;
-            }
-            ans = updates.0;
-            new_map = updates.1;
-            
-        }
-        // println!("{:?}", new_map);
-        return ans;
+        let ans: Vec<(u128, u128, Angle)>= isolated.iter().map(|row| 
+                              row.iter()
+                              .fold((0, 0, Angle::None), |(count, side, half), x| {
+                                    if "|".contains(*x){ (count, (side+1)%2, half) } 
+                                    else if "F7JL".contains(*x) && half ==  Angle::None { (count, side, get_angle(*x)) } 
+                                    else if "F7JL".contains(*x) { (count, (side+add_angles(half, get_angle(*x)))%2, Angle::None) } 
+                                    else if *x == '.' && side == 1 {
+                                        (count+1, side, half)
+                                    }
+                                    else {
+                                        (count, side, half)
+                                    }
+                              })).collect();
+        ans.iter().map(|(c, _, _)| c).sum()
     }
     else {
         panic!("File not found")
