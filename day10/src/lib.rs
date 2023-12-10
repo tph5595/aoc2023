@@ -139,7 +139,7 @@ fn mark_map(mut map: Vec<Vec<char>>, start:(usize,usize)) -> Vec<Vec<char>>{
     map
 }
 
-fn calc_inside(mut map: Vec<Vec<char>>) -> u128{
+fn calc_inside(mut map: Vec<Vec<char>>) -> (u128, Vec<Vec<char>>){
     let mut inside = 0;
     for (i, row) in map.clone().iter().enumerate(){
         for (j, c) in row.iter().enumerate(){
@@ -157,7 +157,7 @@ fn calc_inside(mut map: Vec<Vec<char>>) -> u128{
             }
         }
     }
-    inside
+    (inside, map)
 }
 
 pub fn p2(file: &str) -> u128{
@@ -180,13 +180,15 @@ pub fn p2(file: &str) -> u128{
             .collect();
         let marked_map = mark_map(map, *starts.get(0).unwrap());
         println!("{:?}", marked_map);
-        let mut  ans = calc_inside(marked_map.clone());
+        let (mut ans, mut new_map) = calc_inside(marked_map);
         loop{
-            let t = calc_inside(marked_map.clone());
-            if t == ans{
+            let updates = calc_inside(new_map);
+            if updates.0 == ans{
                 break;
             }
-            ans = t;
+            ans = updates.0;
+            new_map = updates.1;
+            
         }
         return ans;
     }
