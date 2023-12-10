@@ -139,7 +139,7 @@ fn isolate_map(mut map: Vec<Vec<char>>, start:(usize,usize)) -> Vec<Vec<char>>{
 
             ('F', Direction::North) => Direction::East,
             ('F', Direction::West) => Direction::South,
-            _ => unreachable!("{:?}{:?}", pos, last_dir)
+            _ => unreachable!("{:?}{:?}{:?}", c, pos, last_dir)
         };
         pos = advance(pos, &last_dir);
     }
@@ -148,12 +148,129 @@ fn isolate_map(mut map: Vec<Vec<char>>, start:(usize,usize)) -> Vec<Vec<char>>{
             if "|-LJ7F".contains(*c){
                 map[i][j] = '.';
             }
-            else if *c != '.'{
+            else if *c != '.' && *c != 'S'{
                 map[i][j] = ( *c as u8 + 1 ) as char;
             }
         }
     }
     map
+}
+
+fn mark_map(mut map: Vec<Vec<char>>, start:(usize,usize)) -> Vec<Vec<char>>{
+    let mut pos = start;
+    let mut last_dir = Direction::East;
+
+    // Start
+    pos = advance(pos, &last_dir);
+        match last_dir {
+            Direction::North=> if map[pos.0][pos.1+1] == '.'{
+                map[pos.0][pos.1+1]  = 'G';
+            },
+            Direction::East=>  if map[pos.0+1][pos.1] == '.' {
+                map[pos.0+1][pos.1] = 'G';
+            },
+            Direction::South=> if map[pos.0][pos.1-1] == '.'{
+                map[pos.0][pos.1-1]  = 'G';
+            },
+            Direction::West=>  if map[pos.0-1][pos.1] == '.' {
+                map[pos.0-1][pos.1]  = 'G';
+            },
+        };
+    
+    loop {
+        let c = *map.get(pos.0).unwrap().get(pos.1).unwrap();
+        if c == 'S'{
+            break
+        }
+        // mark 
+        match last_dir {
+            Direction::North=> if map[pos.0][pos.1+1] == '.'{
+                map[pos.0][pos.1+1]  = 'G';
+            },
+            Direction::East=>  if map[pos.0+1][pos.1] == '.' {
+                map[pos.0+1][pos.1] = 'G';
+            },
+            Direction::South=> if map[pos.0][pos.1-1] == '.'{
+                map[pos.0][pos.1-1]  = 'G';
+            },
+            Direction::West=>  if map[pos.0-1][pos.1] == '.' {
+                map[pos.0-1][pos.1]  = 'G';
+            },
+        };
+        // Move
+        last_dir = match (c, &last_dir){
+            // Same Dir 
+            ('|', Direction::North) => Direction::North,
+            ('|', Direction::South) => Direction::South,
+            ('-', Direction::East) => Direction::East,
+            ('-', Direction::West) => Direction::West,
+            // Flip Dir
+            ('L', Direction::South) => Direction::East,
+            ('L', Direction::West) => Direction::North,
+
+            ('J', Direction::South) => Direction::West,
+            ('J', Direction::East) => Direction::North,
+
+            ('7', Direction::North) => Direction::West,
+            ('7', Direction::East) => Direction::South,
+
+            ('F', Direction::North) => Direction::East,
+            ('F', Direction::West) => Direction::South,
+            _ => unreachable!("{:?}{:?}{:?}", c, pos, last_dir)
+        };
+        match last_dir {
+            Direction::North=> if map[pos.0][pos.1+1] == '.'{
+                map[pos.0][pos.1+1]  = 'G';
+            },
+            Direction::East=>  if map[pos.0+1][pos.1] == '.' {
+                map[pos.0+1][pos.1] = 'G';
+            },
+            Direction::South=> if map[pos.0][pos.1-1] == '.'{
+                map[pos.0][pos.1-1]  = 'G';
+            },
+            Direction::West=>  if map[pos.0-1][pos.1] == '.' {
+                map[pos.0-1][pos.1]  = 'G';
+            },
+        };
+        pos = advance(pos, &last_dir);
+        match last_dir {
+            Direction::North=> if map[pos.0][pos.1+1] == '.'{
+                map[pos.0][pos.1+1]  = 'G';
+            },
+            Direction::East=>  if map[pos.0+1][pos.1] == '.' {
+                map[pos.0+1][pos.1] = 'G';
+            },
+            Direction::South=> if map[pos.0][pos.1-1] == '.'{
+                map[pos.0][pos.1-1]  = 'G';
+            },
+            Direction::West=>  if map[pos.0-1][pos.1] == '.' {
+                map[pos.0-1][pos.1]  = 'G';
+            },
+        };
+    }
+    // map[start.0][start.1] = 'G';
+    map
+}
+
+fn calc_inside(mut map: Vec<Vec<char>>) -> (u128, Vec<Vec<char>>){
+    let mut inside = 0;
+    for (i, row) in map.clone().iter().enumerate(){
+        for (j, c) in row.iter().enumerate(){
+            if *c == 'G'{
+                inside += 1;
+            }
+            if *c == '.' && i > 0 && j > 0 && i < map.len()-1 && j < map[i].len()-1{
+                if map[i-1][j] == 'G' ||
+                   map[i+1][j] == 'G' ||
+                   map[i][j-1] == 'G' || 
+                   map[i][j+1] == 'G'{
+                    inside += 1;
+                    map[i][j] = 'G';
+                }
+            }
+        }
+    }
+    (inside, map)
 }
 
 pub fn p2(file: &str) -> u128{
@@ -175,20 +292,22 @@ pub fn p2(file: &str) -> u128{
             .map(|(row, v)| (row, v.get(0).unwrap().0))
             .collect();
         let isolated = isolate_map(map, *starts.get(0).unwrap());
-        let ans: Vec<(u128, u128, Angle)>= isolated.iter().map(|row| 
-                              row.iter()
-                              .fold((0, 0, Angle::None), |(count, side, half), x| {
-                                    if "|".contains(*x){ (count, (side+1)%2, half) } 
-                                    else if "F7JL".contains(*x) && half ==  Angle::None { (count, side, get_angle(*x)) } 
-                                    else if "F7JL".contains(*x) { (count, (side+add_angles(half, get_angle(*x)))%2, Angle::None) } 
-                                    else if *x == '.' && side == 1 {
-                                        (count+1, side, half)
-                                    }
-                                    else {
-                                        (count, side, half)
-                                    }
-                              })).collect();
-        ans.iter().map(|(c, _, _)| c).sum()
+        // println!("{:?}", isolated);
+        let marked_map = mark_map(isolated, *starts.get(0).unwrap());
+        println!("{:?}", marked_map);
+        let (mut ans, mut new_map) = calc_inside(marked_map);
+        loop{
+            let updates = calc_inside(new_map);
+            if updates.0 == ans{
+                new_map = updates.1;
+                break;
+            }
+            ans = updates.0;
+            new_map = updates.1;
+            
+        }
+        // println!("{:?}", new_map);
+        return ans;
     }
     else {
         panic!("File not found")
@@ -200,3 +319,4 @@ where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
+
