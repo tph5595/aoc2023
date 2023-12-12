@@ -35,10 +35,25 @@ impl FromStr for Row {
 }
 
 fn mixed_single(data: &[char], seq: &[u8]) -> usize{
-    if seq[0] + 1 == data.len() as u8{
+    if seq[0] == data.len() as u8{
         return 1;
     }
-    return 2;
+    // ?# 1 is returning 2, should be 1
+    let mut first = data.len();
+    let mut last = 0;
+    for (i, c) in data.iter().enumerate(){
+        if *c == '#'{
+            if i < first{
+                first = i;
+            }
+            if i > last{
+                last = i;
+            }
+        }
+    }
+    let reserved = last-first;
+    let n = data.len() - reserved;
+    return n.min(first) + n.min(data.len()-last) - (n-1);
 }
 
 fn q_ways(data: &[char], seq: &[u8], needed: usize) -> usize{
@@ -57,12 +72,8 @@ fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
     return Some(needed);
 }
 
-// fn split_seq(data: &[char], seq: &[u8], i: usize) -> usize{
-//     0
-// }
-
 fn row_perms(data: &[char], seq: &[u8])-> usize{
-    println!("{:?}{:?}", data, seq);
+    println!("row: {:?}{:?}", data, seq);
     if data.iter().any(|c| *c == '.'){
         unreachable!();
     }
@@ -98,18 +109,24 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
     for (i,_) in data.iter().enumerate().filter(|(_, c)| **c == '?'){
         // split seq
         for (j,_) in seq.iter().enumerate(){
-            // let j = split_seq(data, seq, i);
-            // let left = row_perms(&data[..i], &seq[..j]);
-            // let right = row_perms(&data[i..], &seq[j..]);
-            // total += left*right;
-
-            let f = row_perms(&data[..i], &seq[..j]);
+            let f = row_perms(&data[..i], &seq[..=j]);
             if f == 0 {
-                return total;
+                println!("bad");
+                break;
             }
-            total += f * row_perms(&data[i..], &seq[j..])
+            println!("valid: {:?}", f);
+            let other = row_perms(&data[(i+1)..], &seq[(j+1)..]);
+            if other != 0 {
+                println!("found: {:?}", other);
+            }
+            else {
+                println!("bad");
+            }
+            total += f * other;
         }
     }
+
+    println!("validd: {:?}", total);
     total
 }
 
@@ -121,7 +138,7 @@ fn solve(data: &String, seq: &[u8])-> usize{
     // one problem
     if subproblems.len() == 1{
         let d: Vec<char> = data.chars().collect();
-        row_perms(&d[..], seq);
+        return row_perms(&d[..], seq);
     }
     // exact fit
     if subproblems.len() == seq.len(){
@@ -138,7 +155,7 @@ fn solve(data: &String, seq: &[u8])-> usize{
         .filter(|s| !s.is_empty())
         .intersperse_with(||&"." ).collect();
 
-    println!("{:?}{:?}", first, rest);
+    println!("sol: {:?}{:?}", first, rest);
     for (i,_) in seq.iter().enumerate(){
         let f = row_perms(&first.chars().collect::<Vec<char>>()[..], &seq[..=i]);
         if f == 0 {
