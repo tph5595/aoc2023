@@ -3,7 +3,6 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::str::FromStr;
 use std::{usize, u8, i32, char};
-
 use itertools::Itertools;
 
 #[derive(Debug, PartialEq)]
@@ -54,14 +53,21 @@ fn mixed_single(data: &[char], seq: &[u8]) -> usize{
         }
     }
     let reserved = last-first;
+    if reserved >= seq[0] as usize{
+        return 0;
+    }
     let n = data.len() - reserved;
     return n.min(first) + n.min(data.len()-last) - (n-1);
 }
 
 fn q_ways(data: &[char], seq: &[u8], needed: usize) -> usize{
     let extra = data.len() - needed;
+    // println!("{:?}/{:?}/{:?}", data, needed, extra);
 
-    (seq.len()+1).pow(extra as u32)
+    // (seq.len()+1).pow(extra as u32)
+    // extra * (seq.len()+1) + 1
+    let n = extra+1;
+    n*(n+1)/2
 }
 
 fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
@@ -75,7 +81,7 @@ fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
 }
 
 fn row_perms(data: &[char], seq: &[u8])-> usize{
-    println!("row: {:?}{:?}", data, seq);
+    // println!("row: {:?}{:?}", data, seq);
     if data.iter().any(|c| *c == '.'){
         unreachable!();
     }
@@ -113,22 +119,22 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
         // for (j,_) in seq.iter().enumerate(){
             let f = row_perms(&data[..i], &seq[..=0]);
             if f == 0 {
-                println!("bad");
-                // break;
+                // println!("bad");
             }
-            println!("valid: {:?}", f);
+            // println!("valid: {:?}", f);
             let other = row_perms(&data[(i+1)..], &seq[1..]);
             if other != 0 {
-                println!("found: {:?}", other);
+                // println!("found: {:?}", other);
+                total += f * other;
+                break;
             }
             else {
-                println!("bad");
+                // println!("bad");
             }
-            total += f * other;
         // }
     }
 
-    println!("validd: {:?}", total);
+    // println!("validd: {:?}", total);
     total
 }
 
@@ -157,16 +163,16 @@ fn solve(data: &String, seq: &[u8])-> usize{
         .filter(|s| !s.is_empty())
         .intersperse_with(||&"." ).collect();
 
-    println!("sol: {:?}{:?}", first, rest);
+    // println!("sol: {:?}{:?}", first, rest);
     for (i,_) in seq.iter().enumerate(){
         let f = row_perms(&first.chars().collect::<Vec<char>>()[..], &seq[..=i]);
         if f == 0 {
-            println!("ANS: {:?}", total);
+            // println!("ANS: {:?}", total);
             return total;
         }
             total += f * solve(&rest, &seq[(i+1)..])
     }
-    println!("ANS2: {:?}", total);
+    // println!("ANS2: {:?}", total);
     total
 }
 
