@@ -62,10 +62,6 @@ fn mixed_single(data: &[char], seq: &[u8]) -> usize{
 
 fn q_ways(data: &[char], seq: &[u8], needed: usize) -> usize{
     let extra = data.len() - needed;
-    // println!("{:?}/{:?}/{:?}", data, needed, extra);
-
-    // (seq.len()+1).pow(extra as u32)
-    // extra * (seq.len()+1) + 1
     let n = extra+1;
     n*(n+1)/2
 }
@@ -81,7 +77,6 @@ fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
 }
 
 fn row_perms(data: &[char], seq: &[u8])-> usize{
-    // println!("row: {:?}{:?}", data, seq);
     if data.iter().any(|c| *c == '.'){
         unreachable!();
     }
@@ -103,7 +98,6 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
         return 0;
     }
     // Solve only one element
-    // assumes no '.' TODO
     if seq.len() == 1{
         return mixed_single(data, seq)
     }
@@ -115,26 +109,15 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
     // change a ? to a . and recurse the subproblems
     let mut total = 0;
     for (i,_) in data.iter().enumerate().filter(|(_, c)| **c == '?'){
-        // split seq
-        // for (j,_) in seq.iter().enumerate(){
             let f = row_perms(&data[..i], &seq[..=0]);
-            if f == 0 {
-                // println!("bad");
-            }
-            // println!("valid: {:?}", f);
             let other = row_perms(&data[(i+1)..], &seq[1..]);
             if other != 0 {
-                // println!("found: {:?}", other);
                 total += f * other;
                 break;
             }
             else {
-                // println!("bad");
             }
-        // }
     }
-
-    // println!("validd: {:?}", total);
     total
 }
 
@@ -163,16 +146,13 @@ fn solve(data: &String, seq: &[u8])-> usize{
         .filter(|s| !s.is_empty())
         .intersperse_with(||&"." ).collect();
 
-    // println!("sol: {:?}{:?}", first, rest);
     for (i,_) in seq.iter().enumerate(){
         let f = row_perms(&first.chars().collect::<Vec<char>>()[..], &seq[..=i]);
         if f == 0 {
-            // println!("ANS: {:?}", total);
             return total;
         }
             total += f * solve(&rest, &seq[(i+1)..])
     }
-    // println!("ANS2: {:?}", total);
     total
 }
 
