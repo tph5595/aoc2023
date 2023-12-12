@@ -48,17 +48,30 @@ fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
     return Some(needed);
 }
 
-fn split_seq(data: &[char], seq: &[u8], i: usize) -> usize{
-    0
-}
+// fn split_seq(data: &[char], seq: &[u8], i: usize) -> usize{
+//     0
+// }
 
 fn row_perms(data: &[char], seq: &[u8])-> usize{
+    println!("{:?}{:?}", data, seq);
+    if data.iter().any(|c| *c == '.'){
+        unreachable!();
+    }
     if data.is_empty() && seq.is_empty(){
         return 1;
+    }
+    if seq.is_empty(){
+        return 0;
     }
     let needed = valid(data, seq);
     // Can't solve from current state; too big
     if needed == None{
+        return 0;
+    }
+    if data.iter().all(|c| *c == '#'){
+        if data.len() == seq[0] as usize{
+            return 1;
+        }
         return 0;
     }
     // Solve only one element
@@ -75,15 +88,26 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
     let mut total = 0;
     for (i,_) in data.iter().enumerate().filter(|(_, c)| **c == '?'){
         // split seq
-        let j = split_seq(data, seq, i);
-        let left = row_perms(&data[..i], &seq[..j]);
-        let right = row_perms(&data[i..], &seq[j..]);
-       total += left*right;
+        for (j,_) in seq.iter().enumerate(){
+            // let j = split_seq(data, seq, i);
+            // let left = row_perms(&data[..i], &seq[..j]);
+            // let right = row_perms(&data[i..], &seq[j..]);
+            // total += left*right;
+
+            let f = row_perms(&data[..i], &seq[..j]);
+            if f == 0 {
+                return total;
+            }
+            total += f * row_perms(&data[i..], &seq[j..])
+        }
     }
     total
 }
 
 fn solve(data: &String, seq: &[u8])-> usize{
+    if data.is_empty() && seq.is_empty(){
+        return 1;
+    }
     let subproblems: Vec<&str> = data.split('.').collect();
     // one problem
     if subproblems.len() == 1{
@@ -92,13 +116,26 @@ fn solve(data: &String, seq: &[u8])-> usize{
     }
     // exact fit
     if subproblems.len() == seq.len(){
-        let d: Vec<char> = data.chars().collect();
-        return d.iter().zip(seq).map(|(d, s)| row_perms(&[*d], &[*s]) as i32).product::<i32>() as usize;
+        return subproblems.iter()
+            .zip(seq)
+            .map(|(di, s)| row_perms(&di.chars().collect::<Vec<char>>()[..]
+                                     , &[*s]) as i32).product::<i32>() as usize;
     }
-    let total = 0;
-    for subproblem in subproblems{
-
+    // One at a time
+    let mut total = 0;
+    let mut d_iter = data.split('.');
+    let first = d_iter.next().unwrap();
+    let rest: String = d_iter.collect();
+    println!("{:?}{:?}", first, rest);
+    for (i,_) in seq.iter().enumerate(){
+        let f = row_perms(&first.chars().collect::<Vec<char>>()[..], &seq[..=i]);
+        if f == 0 {
+            println!("ANS: {:?}", total);
+            return total;
+        }
+            total += f * solve(&rest, &seq[(i+1)..])
     }
+    println!("ANS2: {:?}", total);
     total
 }
 
