@@ -4,6 +4,8 @@ use std::path::Path;
 use std::str::FromStr;
 use std::{usize, u8, i32, char};
 
+use itertools::Itertools;
+
 #[derive(Debug, PartialEq)]
 pub struct Row{
     data: String,
@@ -19,8 +21,15 @@ impl FromStr for Row {
 
 
         Ok(Row { 
-            data: data.next().unwrap().replace("..", "."), 
-            seq: data.next().unwrap().split(',').map(|c| c.parse().unwrap()).collect()
+            data: data.next().unwrap()
+                .replace("..", ".")
+                .trim_start_matches('.')
+                .trim_end_matches('.')
+                .to_owned(), 
+            seq: data.next().unwrap()
+                .split(',')
+                .map(|c| c.parse().unwrap())
+                .collect()
         })
     }
 }
@@ -125,7 +134,10 @@ fn solve(data: &String, seq: &[u8])-> usize{
     let mut total = 0;
     let mut d_iter = data.split('.');
     let first = d_iter.next().unwrap();
-    let rest: String = d_iter.collect();
+    let rest: String= d_iter
+        .filter(|s| !s.is_empty())
+        .intersperse_with(||&"." ).collect();
+
     println!("{:?}{:?}", first, rest);
     for (i,_) in seq.iter().enumerate(){
         let f = row_perms(&first.chars().collect::<Vec<char>>()[..], &seq[..=i]);
@@ -149,8 +161,7 @@ pub fn p1 (file: &str) -> usize{
             .map(|i| i.unwrap())
             .collect();
         let ans: usize = data.iter().map(|r| solve(&r.data, &r.seq[..])).sum();
-        println!("{:?}", ans);
-        return 0;
+        return ans;
     }
     else {
         panic!("File not found")
