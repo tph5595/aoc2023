@@ -38,7 +38,9 @@ fn mixed_single(data: &[char], seq: &[u8]) -> usize{
     if seq[0] == data.len() as u8{
         return 1;
     }
-    // ?# 1 is returning 2, should be 1
+    if data.iter().all(|c| *c == '?'){
+       return data.len() - seq[0] as usize + 1; 
+    }
     let mut first = data.len();
     let mut last = 0;
     for (i, c) in data.iter().enumerate(){
@@ -108,14 +110,14 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
     let mut total = 0;
     for (i,_) in data.iter().enumerate().filter(|(_, c)| **c == '?'){
         // split seq
-        for (j,_) in seq.iter().enumerate(){
-            let f = row_perms(&data[..i], &seq[..=j]);
+        // for (j,_) in seq.iter().enumerate(){
+            let f = row_perms(&data[..i], &seq[..=0]);
             if f == 0 {
                 println!("bad");
-                break;
+                // break;
             }
             println!("valid: {:?}", f);
-            let other = row_perms(&data[(i+1)..], &seq[(j+1)..]);
+            let other = row_perms(&data[(i+1)..], &seq[1..]);
             if other != 0 {
                 println!("found: {:?}", other);
             }
@@ -123,7 +125,7 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
                 println!("bad");
             }
             total += f * other;
-        }
+        // }
     }
 
     println!("validd: {:?}", total);
