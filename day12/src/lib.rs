@@ -31,60 +31,84 @@ impl FromStr for Row {
 }
 
 fn solve_dp(data: &String, seq: &Vec<usize>) -> usize{
-    let cache: HashMap<(usize, usize, usize), usize>= HashMap::new();
-    let (ans, _) = dfs(cache, data.as_bytes(), seq,  0, 0, 0);
-    ans
+    let mut cache: HashMap<(usize, usize, usize), usize>= HashMap::new();
+    dfs(&mut cache, data.as_bytes(), seq,  0, 0, 0)
 }
 
-fn dfs(cache: HashMap<(usize, usize, usize), usize>, 
+fn dfs(cache: &mut HashMap<(usize, usize, usize), usize>, 
        data: &[u8], 
        seq: &Vec<usize>, 
        from: usize, 
        group_idx: usize, 
        cur_run: usize) 
-    -> (usize, HashMap<(usize, usize, usize), usize>){
+    -> usize {
 
     if let Some(ways) = cache.get(&(from, group_idx, cur_run)){
-        return (*ways, cache);
+        return *ways;
     }
     // End of data
     if from >= data.len(){
         // If matched all groups
         if group_idx >= seq.len(){
-            return (1, cache);
+            return 1;
         }
         // Ended with a match
         if cur_run == seq[group_idx]{
-            return (1, cache);
+            return 1;
         }
-        return (0, cache);
+        return 0;
 
     }
     match data[from]{
         b'.' => {
             // Not tracking anything, just skip '.'s
             if cur_run == 0{
-
                 return dfs(cache, data, seq, from+1, group_idx, cur_run);
             }
             // See if it matched
             if cur_run == seq[group_idx]{
                 // match
-                let (w, mut cache) = dfs(cache, data, seq, from+1, group_idx+1, 0);
+                let w = dfs(cache, data, seq, from+1, group_idx+1, 0);
                 cache.insert((from, group_idx, cur_run), w);
-                return (w, cache);
+                return w;
             }
-            return (0, cache);
+            return 0;
         },
         b'#' => {
             return dfs(cache, data, seq, from+1, group_idx, cur_run+1);
         },
-        // b'?' => {},
         // do two recurse, one where we pretend to add a . the other the #
+        b'?' => {
+            let mut ways = 0;
+            // If nothing else to match, treat as '.'
+            if group_idx >= seq.len(){
+                return dfs(cache, data, seq, from+1, group_idx, cur_run);
+            }
+            // treat as '.'
+            //// Not tracking anything, just skip '.'s
+            if cur_run == 0{
+                let p = dfs(cache, data, seq, from+1, group_idx, cur_run);
+                ways += p;
+            }
+            //// See if it matched
+            if cur_run == seq[group_idx]{
+                // match
+                let w = dfs(cache, data, seq, from+1, group_idx+1, 0);
+                cache.insert((from, group_idx, cur_run), w);
+                ways += w;
+            }
+            // treat as '#'
+            //// if it would be valid
+            if seq[group_idx]-1 >= cur_run{
+                let p = dfs(cache, data, seq, from+1, group_idx, cur_run+1);
+                ways += p;
+            }
+            return ways;
+        },
         _ => unreachable!()
     }
     // return (ways, cache);
-}
+    }
 
 pub fn p1 (file: &str) -> usize{
     if let Ok(lines) = read_lines(file) {
