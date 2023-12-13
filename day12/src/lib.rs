@@ -131,7 +131,34 @@ pub fn p1 (file: &str) -> usize{
     }
 }
 
-pub fn p2(_file: &str) -> usize{ 0 }
+fn times_5(r: &Row)-> Row{
+    Row{
+        data: (0..5)
+        .map(|_| r.data.clone())
+        .collect::<Vec<String>>()
+        .join("?"),
+        seq: r.seq.repeat(5),
+    }
+
+}
+
+pub fn p2 (file: &str) -> usize{
+    if let Ok(lines) = read_lines(file) {
+        let data: Vec<Row>= lines
+            .into_iter()
+            .filter_map(|item| item.ok())
+            .map(|i| i.parse().ok())
+            .filter_map(|parsed_ip| Some(parsed_ip))
+            .map(|i| i.unwrap())
+            .collect();
+        let ans: usize = data.iter().map(|r| times_5(r))
+            .map(|r| solve_dp(&r.data, &r.seq)).sum();
+        return ans;
+    }
+    else {
+        panic!("File not found")
+    }
+}
 
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
