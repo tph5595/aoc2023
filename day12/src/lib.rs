@@ -52,8 +52,8 @@ fn dfs(cache: &mut HashMap<(usize, usize, usize), usize>,
         if group_idx >= seq.len(){
             return 1;
         }
-        // Ended with a match
-        if cur_run == seq[group_idx]{
+        // Ended with the final match
+        if cur_run == seq[group_idx] && group_idx == seq.len() - 1 {
             return 1;
         }
         return 0;
@@ -66,10 +66,10 @@ fn dfs(cache: &mut HashMap<(usize, usize, usize), usize>,
                 return dfs(cache, data, seq, from+1, group_idx, cur_run);
             }
             // See if it matched
-            if cur_run == seq[group_idx]{
+            if group_idx < seq.len() && cur_run == seq[group_idx]{
                 // match
                 let w = dfs(cache, data, seq, from+1, group_idx+1, 0);
-                cache.insert((from, group_idx, cur_run), w);
+                // cache.insert((from, group_idx, cur_run), w);
                 return w;
             }
             return 0;
@@ -99,15 +99,15 @@ fn dfs(cache: &mut HashMap<(usize, usize, usize), usize>,
             }
             // treat as '#'
             //// if it would be valid
-            if seq[group_idx]-1 >= cur_run{
+            if seq[group_idx] > cur_run{
                 let p = dfs(cache, data, seq, from+1, group_idx, cur_run+1);
                 ways += p;
             }
+            cache.insert((from, group_idx, cur_run), ways);
             return ways;
         },
         _ => unreachable!()
     }
-    // return (ways, cache);
     }
 
 pub fn p1 (file: &str) -> usize{
