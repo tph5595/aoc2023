@@ -1,15 +1,14 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::str::FromStr;
-use std::{usize, u8, i32, char};
-
-use itertools::Itertools;
+use std::{usize, u8};
 
 #[derive(Debug, PartialEq)]
 pub struct Row{
     data: String,
-    seq: Vec<u8>,
+    seq: Vec<usize>,
 }
 
 impl FromStr for Row {
@@ -22,9 +21,6 @@ impl FromStr for Row {
 
         Ok(Row { 
             data: data.next().unwrap()
-                .replace("..", ".")
-                .trim_start_matches('.')
-                .trim_end_matches('.')
                 .to_owned(), 
             seq: data.next().unwrap()
                 .split(',')
@@ -34,182 +30,60 @@ impl FromStr for Row {
     }
 }
 
-fn mixed_single(data: &[char], seq: &[u8]) -> usize{
-    if seq[0] == data.len() as u8{
-        return 1;
-    }
-    if data.iter().all(|c| *c == '?'){
-       return data.len() - seq[0] as usize + 1; 
-    }
-    let mut first = data.len();
-    let mut last = 0;
-    for (i, c) in data.iter().enumerate(){
-        if *c == '#'{
-            if i < first{
-                first = i;
-            }
-            if i > last{
-                last = i;
-            }
-        }
-    }
-    let reserved = last-first;
-    if reserved >= seq[0] as usize{
-        return 0;
-    }
-    let n = data.len() - reserved;
-    return n.min(first) + n.min(data.len()-last) - (n-1);
+fn solve_dp(data: &String, seq: &Vec<usize>) -> usize{
+    let cache: HashMap<(usize, usize, usize), usize>= HashMap::new();
+    let (ans, _) = dfs(cache, data.as_bytes(), seq,  0, 0, 0);
+    ans
 }
 
-fn q_ways(data: &[char], seq: &[u8], needed: usize) -> usize{
-    let extra = data.len() - needed;
-    // println!("{:?}/{:?}/{:?}", data, needed, extra);
+fn dfs(cache: HashMap<(usize, usize, usize), usize>, 
+       data: &[u8], 
+       seq: &Vec<usize>, 
+       from: usize, 
+       group_idx: usize, 
+       cur_run: usize) 
+    -> (usize, HashMap<(usize, usize, usize), usize>){
 
-    // (seq.len()+1).pow(extra as u32)
-    // extra * (seq.len()+1) + 1
-    let n = extra+1;
-    n*(n+1)/2
-}
-
-fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
-    let good_space:usize = seq.iter().map(|i| *i as i32).sum::<i32>() as usize;
-    let dots = seq.len()-1;
-    let needed = good_space + dots;
-    if needed > data.len() {
-        return None;
+    if let Some(ways) = cache.get(&(from, group_idx, cur_run)){
+        return (*ways, cache);
     }
-    return Some(needed);
-}
-
-fn row_perms(data: &[char], seq: &[u8])-> usize{
-    // println!("row: {:?}{:?}", data, seq);
-    if data.iter().any(|c| *c == '.'){
-        // Don't worry I hate myself for this too 
-        return solve(&data.iter().collect::<String>().to_owned(), seq);
-    }
-    if data.is_empty() && seq.is_empty(){
-        return 1;
-    }
-    // Could all be ','
-    if data.iter().all(|c| *c == '?') && seq.is_empty(){
-        return 1;
-    }
-    if seq.is_empty(){
-        return 0;
-    }
-    let needed = valid(data, seq);
-    // Can't solve from current state; too big
-    if needed == None{
-        return 0;
-    }
-    if data.iter().all(|c| *c == '#'){
-        if data.len() == seq[0] as usize{
-            return 1;
+    // End of data
+    if from >= data.len(){
+        // If matched all groups
+        if group_idx >= seq.len(){
+            return (1, cache);
         }
-        return 0;
-    }
-    // Solve only one element
-    // assumes no '.' TODO
-    if seq.len() == 1{
-        return mixed_single(data, seq)
-    }
-    // Solve all ?'s
-    if data.iter().all(|c| *c == '?'){
-        return q_ways(data, seq, needed.unwrap());
-    }
-    // Mixed and multiple:
-    // change a ? to a . and recurse the subproblems
-    let mut total = 0;
-    for (i,_) in data.iter().enumerate().filter(|(_, c)| **c == '?'){
-        // split seq
-        // for (j,_) in seq.iter().enumerate(){
-        let f = row_perms(&data[..i], &seq[..=0]);
-        if f == 0 {
-            // println!("bad");
+        // Ended with a match
+        if cur_run == seq[group_idx]{
+            return (1, cache);
         }
-        else{
-            // println!("valid: {:?}", f);
-            let other = row_perms(&data[(i+1)..], &seq[1..]);
-            if other != 0 {
-                // println!("found: {:?}", other);
-                total += f * other;
-                break;
+        return (0, cache);
+
+    }
+    match data[from]{
+        b'.' => {
+            // Not tracking anything, just skip '.'s
+            if cur_run == 0{
+
+                return dfs(cache, data, seq, from+1, group_idx, cur_run);
             }
-            else {
-                // println!("bad");
+            // See if it matched
+            if cur_run == seq[group_idx]{
+                // match
+                let (w, mut cache) = dfs(cache, data, seq, from+1, group_idx+1, 0);
+                cache.insert((from, group_idx, cur_run), w);
+                return (w, cache);
             }
-        }
-        // }
+            return (0, cache);
+        },
+        b'#' => {
+            return dfs(cache, data, seq, from+1, group_idx, cur_run+1);
+        },
+        // b'?' => {},
+        // do two recurse, one where we pretend to add a . the other the #
+        _ => unreachable!()
     }
-
-    // println!("validd: {:?}", total);
-    total
-}
-
-fn solve(data_t: &String, seq: &[u8])-> usize{
-    let  data = data_t
-        .replace("..", ".")
-        .trim_start_matches('.')
-        .trim_end_matches('.').to_owned();
-    if data.is_empty() && seq.is_empty(){
-        return 1;
-    }
-    // Could all be '.'
-    if data.chars().all(|c| c == '?' || c == '.') && seq.is_empty(){
-        return 1;
-    }
-    // remove empty sets
-    let subproblems: Vec<&str> = data.split('.')
-        .filter(|v| !v.is_empty())
-        .collect();
-    // one problem
-    // println!("size: {:?}/{:?}", subproblems, seq);
-    if subproblems.len() == 1{
-        let d: Vec<char> = data.chars().collect();
-        return row_perms(&d[..], seq);
-    }
-    // exact fit
-    if subproblems.len() == seq.len(){
-        return subproblems.iter()
-            .zip(seq)
-            .map(|(di, s)| row_perms(&di.chars().collect::<Vec<char>>()[..]
-                                     , &[*s]) as i32).product::<i32>() as usize;
-    }
-    // One at a time
-    let mut total = 0;
-    let mut d_iter = data.split('.');
-    let first = d_iter.next().unwrap();
-    let rest: String= d_iter
-        .filter(|s| !s.is_empty())
-        .intersperse_with(||&"." )
-        .collect::<String>()
-        .replace("..", ".")
-        .trim_start_matches('.')
-        .trim_end_matches('.')
-        .to_owned();
-
-    // println!("sol: {:?}/{:?}", first, rest);
-    for (i,_) in data.chars().enumerate().filter(|(_, c)| *c == '.'){
-        for (j,_) in seq.iter().enumerate(){
-            // Allow for skiping segment
-            total += solve(&(data[(i+1)..]).to_owned(), &seq[..]);
-            let f = row_perms(&data.chars().collect::<Vec<char>>()[..i], &seq[..=j]);
-            if f != 0 {
-                total += f * solve(&(data[(i+1)..]).to_owned(), &seq[(j+1)..]);
-                // println!("ANS: {:?}", total);
-            }
-            if total > 0{
-                // println!("drop out");
-                return total;
-            }
-        }
-        if total > 0{
-            // println!("drop out");
-            return total;
-        }
-    }
-    // println!("ANS2: {:?}", total);
-    total
+    // return (ways, cache);
 }
 
 pub fn p1 (file: &str) -> usize{
@@ -221,7 +95,7 @@ pub fn p1 (file: &str) -> usize{
             .filter_map(|parsed_ip| Some(parsed_ip))
             .map(|i| i.unwrap())
             .collect();
-        let ans: usize = data.iter().map(|r| solve(&r.data, &r.seq[..])).sum();
+        let ans: usize = data.iter().map(|r| solve_dp(&r.data, &r.seq)).sum();
         return ans;
     }
     else {
