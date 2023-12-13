@@ -84,7 +84,8 @@ fn valid(data: &[char], seq: &[u8]) -> Option<usize>{
 fn row_perms(data: &[char], seq: &[u8])-> usize{
     println!("row: {:?}{:?}", data, seq);
     if data.iter().any(|c| *c == '.'){
-        unreachable!();
+        // Don't worry I hate myself for this too 
+        return solve(&data.iter().collect::<String>().to_owned(), seq);
     }
     if data.is_empty() && seq.is_empty(){
         return 1;
@@ -122,10 +123,11 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
     for (i,_) in data.iter().enumerate().filter(|(_, c)| **c == '?'){
         // split seq
         // for (j,_) in seq.iter().enumerate(){
-            let f = row_perms(&data[..i], &seq[..=0]);
-            if f == 0 {
-                println!("bad");
-            }
+        let f = row_perms(&data[..i], &seq[..=0]);
+        if f == 0 {
+            println!("bad");
+        }
+        else{
             println!("valid: {:?}", f);
             let other = row_perms(&data[(i+1)..], &seq[1..]);
             if other != 0 {
@@ -136,6 +138,7 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
             else {
                 println!("bad");
             }
+        }
         // }
     }
 
@@ -143,7 +146,11 @@ fn row_perms(data: &[char], seq: &[u8])-> usize{
     total
 }
 
-fn solve(data: &String, seq: &[u8])-> usize{
+fn solve(data_t: &String, seq: &[u8])-> usize{
+    let  data = data_t
+        .replace("..", ".")
+        .trim_start_matches('.')
+        .trim_end_matches('.').to_owned();
     if data.is_empty() && seq.is_empty(){
         return 1;
     }
@@ -151,8 +158,12 @@ fn solve(data: &String, seq: &[u8])-> usize{
     if data.chars().all(|c| c == '?' || c == '.') && seq.is_empty(){
         return 1;
     }
-    let subproblems: Vec<&str> = data.split('.').collect();
+    // remove empty sets
+    let subproblems: Vec<&str> = data.split('.')
+        .filter(|v| !v.is_empty())
+        .collect();
     // one problem
+    println!("size: {:?}/{:?}", subproblems, seq);
     if subproblems.len() == 1{
         let d: Vec<char> = data.chars().collect();
         return row_perms(&d[..], seq);
@@ -170,17 +181,29 @@ fn solve(data: &String, seq: &[u8])-> usize{
     let first = d_iter.next().unwrap();
     let rest: String= d_iter
         .filter(|s| !s.is_empty())
-        .intersperse_with(||&"." ).collect();
+        .intersperse_with(||&"." )
+        .collect::<String>()
+        .replace("..", ".")
+        .trim_start_matches('.')
+        .trim_end_matches('.')
+        .to_owned();
 
-    println!("sol: {:?}{:?}", first, rest);
+    println!("sol: {:?}/{:?}", first, rest);
     for (i,_) in data.chars().enumerate().filter(|(_, c)| *c == '.'){
-    // for (i,_) in seq.iter().enumerate(){
-        let f = row_perms(&data.chars().collect::<Vec<char>>()[..i], &seq[..=0]);
-        if f == 0 {
-            println!("ANS: {:?}", total);
+        for (j,_) in seq.iter().enumerate(){
+            // Allow for skiping segment
+            total += solve(&(data[(i+1)..]).to_owned(), &seq[..]);
+            let f = row_perms(&data.chars().collect::<Vec<char>>()[..i], &seq[..=j]);
+            if f != 0 {
+                total += f * solve(&(data[(i+1)..]).to_owned(), &seq[(j+1)..]);
+                println!("ANS: {:?}", total);
+                return total;
+            }
+        }
+        if total > 0{
+            println!("drop out");
             return total;
         }
-            total += f * solve(&(data[(i+1)..]).to_owned(), &seq[(1)..])
     }
     println!("ANS2: {:?}", total);
     total
