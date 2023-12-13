@@ -75,6 +75,10 @@ fn dfs(cache: &mut HashMap<(usize, usize, usize), usize>,
             return 0;
         },
         b'#' => {
+            // if too full
+            if group_idx >= seq.len() || seq[group_idx] < cur_run+1{
+                return 0;
+            }
             return dfs(cache, data, seq, from+1, group_idx, cur_run+1);
         },
         // do two recurse, one where we pretend to add a . the other the #
