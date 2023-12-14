@@ -144,6 +144,7 @@ fn cycle(data: &mut Vec<Vec<u8>>, times: usize){
         tilt_west(data);
         tilt_south(data);
         tilt_east(data);
+
     }
 
 }
@@ -162,11 +163,11 @@ pub fn p1 (file: &str) -> usize{
         let ans: usize = data.iter()
             .enumerate()
             .map(|(i, r)| {
-                let Os: usize = r.iter()
+                let os: usize = r.iter()
                     .filter(|c| **c == b'O')
                     .map(|_| 1)
                     .sum();
-                Os * (data_size-i)
+                os * (data_size-i)
             }
             ).sum();
         return ans;
