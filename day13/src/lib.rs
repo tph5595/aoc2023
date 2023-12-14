@@ -4,6 +4,7 @@ use std::path::Path;
 use std::usize;
 
 fn test_v(b: &[u8], flip: usize) -> bool{
+
     let mut l = flip;
     let mut r = flip+1;
     loop {
@@ -20,7 +21,7 @@ fn test_v(b: &[u8], flip: usize) -> bool{
 }
 
 fn v_search(b: &Vec<String>) -> Option<usize>{
-    let mut can: Vec<usize> = (1..b[0].len()-1).collect();
+    let mut can: Vec<usize> = (0..b[0].len()-1).collect();
     for r in b {
         if can.len() == 0{
             break;
@@ -38,6 +39,7 @@ fn v_search(b: &Vec<String>) -> Option<usize>{
 }
 
 fn test_h(b: &Vec<String>, col: usize, flip: usize) -> bool{
+    // print!("{:?}, ", flip);
     let mut l = flip;
     let mut r = flip+1;
     loop {
@@ -54,7 +56,7 @@ fn test_h(b: &Vec<String>, col: usize, flip: usize) -> bool{
 }
 
 fn h_search(b: &Vec<String>) -> Option<usize>{
-    let mut can: Vec<usize> = (1..b.len()-1).collect();
+    let mut can: Vec<usize> = (0..b.len()-1).collect();
     for (i, _) in b[0].chars().enumerate(){
         if can.len() == 0{
             break;
@@ -63,8 +65,8 @@ fn h_search(b: &Vec<String>) -> Option<usize>{
             .filter(|f| test_h(b, i, **f))
             .map(|f| *f)
             .collect();
-       // println!("{:?}", can);
     }
+    // println!("");
     if can.len() == 1{
         return Some(can[0]+1);
     }
@@ -73,21 +75,24 @@ fn h_search(b: &Vec<String>) -> Option<usize>{
 
 fn fliper(b: &Vec<String>) -> usize{
     if let Some(h_flip) = h_search(b){
-        // println!("found h: {:?} {:?}", h_flip, b);
-        return h_flip* 100;
+        // println!("h: {}", h_flip);
+        return h_flip * 100;
     }
-    let v = v_search(b).unwrap_or(0);
-    // println!("{:?}",v );
-    v
+     let v = v_search(b).unwrap_or(0);
+     // println!("v: {}", v);
+     v
 }
 
 pub fn p1 (file: &str) -> usize{
     let lines = read_lines(file);
     let data: Vec<Vec<String>> = lines
         .split("\n\n")
-        .map(|s| s.to_owned().split("\n").map(|si| si.to_owned()).filter(|s| !s.is_empty()).collect())
+        .map(|s| s.to_owned()
+             .split("\n")
+             .map(|si| si.to_owned())
+             .filter(|s| !s.is_empty())
+             .collect())
         .collect();
-    // println!("{:?}", data);
     let ans: usize = data.iter().map(|b| fliper(b)).sum();
     return ans;
 }
