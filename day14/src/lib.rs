@@ -1,3 +1,4 @@
+use std::collections::{HashSet, HashMap};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -136,7 +137,14 @@ fn byte_to_strings(data: &Vec<Vec<u8>>)-> String{
 }
 
 fn cycle(data: &mut Vec<Vec<u8>>, times: usize){
+    let mut detection: HashMap<Vec<Vec<u8>>, usize>= HashMap::new();
     for i in 0..times{
+        if let Some(c) = detection.get(data){
+            let l = i-c;
+            let left = (times-i)%l;
+            return cycle(data, left);
+        }
+        detection.insert(data.clone(), i);
         if i % 10000 == 0{
             println!("{}", i);
         }
