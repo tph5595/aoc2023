@@ -3,17 +3,21 @@ use std::io::{BufReader, Read};
 use std::path::Path;
 use std::usize;
 
-fn test_v(b: &[u8], flip: usize) -> bool{
+fn test_v(b: &[u8], flip: usize, allowance: usize) -> usize{
 
+    let mut change = allowance;
     let mut l = flip;
     let mut r = flip+1;
     loop {
         if b[l] != b[r]{
-            return false;
+            if change != 0{
+                return 2;
+            }
+            change = 1;
         }
         // if no more data
         if l == 0 || r == b.len()-1{
-            return true;
+            return change;
         }
         l -= 1;
         r += 1;
@@ -21,34 +25,41 @@ fn test_v(b: &[u8], flip: usize) -> bool{
 }
 
 fn v_search(b: &Vec<String>) -> Option<usize>{
-    let mut can: Vec<usize> = (0..b[0].len()-1).collect();
+    let mut can: Vec<(usize, usize)> = (0..b[0].len()-1).map(|f| (f, 0)).collect();
     for r in b {
         if can.len() == 0{
             break;
         }
         can = can.iter()
-            .filter(|f| test_v(r.as_bytes(), **f))
-            .map(|f| *f)
+            .map(|(f, change)| (*f, test_v(r.as_bytes(), *f, *change)))
+            .filter(|(_, change)| *change <= 1)
             .collect();
         
     }
+    can = can.iter()
+        .filter(|(_, change)| *change == 1)
+        .map(|f| *f)
+        .collect();
     if can.len() == 1{
-        return Some(can[0]+1);
+        return Some(can[0].0+1);
     }
     return None;
 }
 
-fn test_h(b: &Vec<String>, col: usize, flip: usize) -> bool{
-    // print!("{:?}, ", flip);
+fn test_h(b: &Vec<String>, col: usize, flip: usize, allowance: usize) -> usize{
+    let mut change = allowance;
     let mut l = flip;
     let mut r = flip+1;
     loop {
         if b[l].as_bytes()[col] != b[r].as_bytes()[col]{
-            return false;
+            if change != 0{
+                return 2;
+            }
+            change = 1;
         }
         // if no more data
         if l == 0 || r == b.len()-1{
-            return true;
+            return change;
         }
         l -= 1;
         r += 1;
@@ -56,19 +67,24 @@ fn test_h(b: &Vec<String>, col: usize, flip: usize) -> bool{
 }
 
 fn h_search(b: &Vec<String>) -> Option<usize>{
-    let mut can: Vec<usize> = (0..b.len()-1).collect();
+    let mut can: Vec<(usize,usize)> = (0..b.len()-1).map(|f| (f, 0)).collect();
     for (i, _) in b[0].chars().enumerate(){
+        // println!("{:?}", can);
         if can.len() == 0{
             break;
         }
         can = can.iter()
-            .filter(|f| test_h(b, i, **f))
-            .map(|f| *f)
+            .map(|(f, change)| (*f, test_h(b, i, *f, *change)))
+            .filter(|(_, change)| *change <= 1)
             .collect();
     }
-    // println!("");
+    // println!("{:?}", can);
+    can = can.iter()
+        .filter(|(_, change)| *change == 1)
+        .map(|f| *f)
+        .collect();
     if can.len() == 1{
-        return Some(can[0]+1);
+        return Some(can[0].0+1);
     }
     return None;
 }
