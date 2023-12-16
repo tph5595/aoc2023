@@ -27,16 +27,16 @@ fn on_board(cur: (i32, i32), f: i32, s: i32) -> bool{
         (0 <= cur.1 && cur.1 < s)
 }
 
-fn follow_light(data: Vec<Vec<char>>)-> i32{
+fn follow_light(data: &Vec<Vec<char>>, start: ((i32, i32), Direction))-> i32{
     let mut q: VecDeque<((i32, i32), Direction)> = VecDeque::new();
     let mut seen: HashSet<((i32, i32), Direction)>= HashSet::new();
     let mut charged: HashSet<(i32, i32)>= HashSet::new();
-    q.push_back(((0,0), Direction::Right));
+    q.push_back(start);
     while let Some(cur) = q.pop_front() {
-        println!("{:?}", cur);
+        // println!("{:?}", cur);
         // Check if in range or already seen
         if seen.get(&cur).is_some() || !on_board(cur.0, data.len() as i32, data[0].len() as i32) {
-            println!("bad spot");
+            // println!("bad spot");
         }
         else {
            // New Space 
@@ -116,14 +116,39 @@ pub fn p1 (file: &str) -> i32{
             .filter_map(|item| item.ok())
             .map(|i| i.chars().collect())
             .collect();
-        follow_light(data)
+        follow_light(&data, ((0,0),Direction::Right))
     }
     else {
         panic!("File not found")
     }
 }
 
-pub fn p2(_file: &str) -> i32{ 0 }
+pub fn p2 (file: &str) -> i32{
+    if let Ok(lines) = read_lines(file) {
+        let data: Vec<Vec<char>>= lines
+            .into_iter()
+            .filter_map(|item| item.ok())
+            .map(|i| i.chars().collect())
+            .collect();
+        let mut best = 0;
+        let start_top = (0..data.len()).map(|i| ((i as i32, 0), Direction::Down));
+        let start_bottom = (0..data.len()).map(|i| ((i as i32, (data.len()-1) as i32), Direction::Up));
+        let start_left = (0..data[0].len()).map(|i| ((0, i as i32), Direction::Right));
+        let start_right = (0..data[0].len()).map(|i| (((data[0].len()-1) as i32, i as i32), Direction::Left));
+        let starts = start_top.chain(start_bottom).chain(start_left).chain(start_right);
+
+        for start in starts {
+            let new = follow_light(&data, start);
+            if new > best{
+                best = new;
+            }
+        }
+        best
+    }
+    else {
+        panic!("File not found")
+    }
+}
 
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
