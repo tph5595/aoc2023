@@ -131,10 +131,10 @@ pub fn p2 (file: &str) -> i32{
             .map(|i| i.chars().collect())
             .collect();
         let mut best = 0;
-        let start_top = (0..data.len()).map(|i| ((i as i32, 0), Direction::Down));
-        let start_bottom = (0..data.len()).map(|i| ((i as i32, (data.len()-1) as i32), Direction::Up));
-        let start_left = (0..data[0].len()).map(|i| ((0, i as i32), Direction::Right));
-        let start_right = (0..data[0].len()).map(|i| (((data[0].len()-1) as i32, i as i32), Direction::Left));
+        let start_top = (0..data.len()).map(|i| ((i as i32, 0), Direction::Right));
+        let start_bottom = (0..data.len()).map(|i| ((i as i32, (data.len()-1) as i32), Direction::Left));
+        let start_left = (0..data[0].len()).map(|i| ((0, i as i32), Direction::Down));
+        let start_right = (0..data[0].len()).map(|i| (((data[0].len()-1) as i32, i as i32), Direction::Up));
         let starts = start_top.chain(start_bottom).chain(start_left).chain(start_right);
 
         for start in starts {
